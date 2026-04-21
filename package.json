@@ -1,0 +1,43 @@
+{
+  "name": "voltify-telemetry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "db": "tsx src/infra/db.ts",
+    "broker": "tsx src/infra/broker.ts",
+    "worker": "tsx src/worker/index.ts",
+    "simulator": "tsx src/simulator/index.ts",
+    "web": "next dev",
+    "dev:cloud": "concurrently -k -n db,broker,worker,web -c blue,magenta,green,yellow npm:db npm:broker npm:worker npm:web",
+    "dev:trains": "npm run simulator -- --trains 3",
+    "dev": "concurrently -k -n cloud,trains -c cyan,red npm:dev:cloud npm:dev:trains",
+    "test": "node --import tsx --test src/test/voting.test.ts src/test/outbox.test.ts src/test/pipeline.smoke.test.ts",
+    "test:unit": "node --import tsx --test src/test/voting.test.ts src/test/outbox.test.ts",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "aedes": "^1.0.0",
+    "dynalite": "^4.0.0",
+    "mqtt": "^5.0.0",
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "resend": "^4.0.0",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "concurrently": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
