@@ -218,6 +218,43 @@ Ctrl+C terminal 2 to demo a full fleet disconnect. Watch the dashboard cards go
 `STALE`. Restart and watch them resume: readings keep their original timestamps
 (not the reconnect time), because the outbox preserved them.
 
+### Full store-and-forward demo (broker outage)
+
+The two-terminal setup above demonstrates the dashboard's STALE handling. The
+more compelling test — where the simulator keeps generating during an outage
+and drains a large backlog on reconnect — needs the services started
+independently so the broker can be killed on its own:
+
+```bash
+# terminal 1
+npm run db
+
+# terminal 2
+npm run broker
+
+# terminal 3
+npm run worker
+
+# terminal 4
+npm run simulator -- --trains 3
+```
+
+With all four running, Ctrl+C terminal 2 (the broker only). The simulator
+keeps ticking at 1 Hz; every publish fails and is held in
+`data/outbox-<train>.jsonl`. The simulator logs show `outbox=N` climbing
+monotonically. No writes reach DynamoDB during the outage because the worker
+can't subscribe to a dead broker.
+
+Restart `npm run broker` in terminal 2. Within a few seconds the simulator
+reconnects, the outbox drains in order, and the worker writes the backlog to
+DynamoDB with the **original capture timestamps**, not the reconnect time. A
+60-second outage produces around 60 replayed readings per train (at the default
+1 Hz). To verify timestamp preservation, query DynamoDB for rows with `ts`
+between the kill and restart wall-clock times — they will all be there.
+
+(Add `npm run web` in a fifth terminal if you also want the backlog to render
+on the dashboard.)
+
 ### Inject anomalies
 
 Two ways, both hit the same simulator state:
